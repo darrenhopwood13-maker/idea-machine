@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>🎪 Idea Machine</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+@keyframes floaty { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@keyframes pulse { 0%,100% { opacity: 0.6; } 50% { opacity: 1; } }
+@keyframes rainbow { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
+@keyframes wiggle { 0%,100% { transform: rotate(-1deg); } 50% { transform: rotate(1deg); } }
+@keyframes reelBlur { 0% { opacity:0; transform: scaleY(1.6) translateY(-22px); filter: blur(5px); } 100% { opacity:1; transform: scaleY(1) translateY(0); filter: blur(0); } }
+@keyframes cardIn { 0% { opacity:0; transform: translateX(-14px); } 100% { opacity:1; transform: translateX(0); } }
+@keyframes shake { 0%,100% { transform: translateX(0); } 20% { transform: translateX(-3px); } 40% { transform: translateX(3px); } 60% { transform: translateX(-2px); } 80% { transform: translateX(2px); } }
+@keyframes sparkle { 0%,100% { opacity:0.5; } 50% { opacity:1; } }
+
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+html, body { overflow-x: hidden; }
+body {
+  background: linear-gradient(135deg, #1a0033 0%, #330066 45%, #003366 100%);
+  min-height: 100vh; display:flex; justify-content:center;
+  padding:12px; font-family:'Space Grotesk',sans-serif; color:#fff;
+}
+body::before {
+  content:''; position:fixed; inset:0; pointer-events:none;
+  background-image: radial-gradient(2px 2px at 20px 30px,#eee,transparent),
+    radial-gradient(2px 2px at 40px 70px,#fff,transparent),
+    radial-gradient(1px 1px at 90px 40px,#fff,transparent),
+    radial-gradient(2px 2px at 200px 50px,#ffd700,transparent),
+    radial-gradient(1px 1px at 300px 80px,#00ffff,transparent),
+    radial-gradient(1px 1px at 400px 60px,#ff69b4,transparent),
+    radial-gradient(2px 2px at 500px 100px,#ffd700,transparent);
+  background-size:500px 200px; opacity:0.18;
+}
+.app { max-width:680px; width:100%; position:relative; z-index:1; }
+
+.marquee { text-align:center; margin:6px 0 8px; }
+.marquee h1 {
+  font-family:'Playfair Display',serif; font-size:34px; font-weight:900;
+  background:linear-gradient(90deg,#ff69b4,#ffd700,#00ffff,#ff69b4,#ffd700);
+  background-size:200% 100%; -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  animation:rainbow 3s linear infinite; letter-spacing:3px;
+}
+.marquee .sub { color:#ffd700; font-size:10px; letter-spacing:5px; text-transform:uppercase; font-weight:700; animation:pulse 2s infinite; }
+
+.lights { display:flex; gap:6px; justify-content:center; margin-bottom:8px; }
+.light { width:10px; height:10px; border-radius:50%; animation:pulse 1.5s infinite; }
+.light:nth-child(odd) { background:#ff69b4; }
+.light:nth-child(even) { background:#ffd700; }
+.light:nth-child(3n) { background:#00ffff; animation-delay:.3s; }
+.light:nth-child(4n) { background:#ff69b4; animation-delay:.6s; }
+.light:nth-child(5n) { background:#ffd700; animation-delay:.9s; }
+
+.frame {
+  background:linear-gradient(135deg,#1a0044cc,#330066cc);
+  border:3px solid #ffd700; border-radius:20px 20px 10px 10px;
+  padding:16px; backdrop-filter:blur(10px);
+  box-shadow:0 0 30px rgba(255,215,0,.2), inset 0 0 40px rgba(0,0,0,.5);
+}
+
+.reels { display:flex; gap:8px; justify-content:center; margin-bottom:12px; }
+.reel {
+  background:linear-gradient(180deg,#000020,#1a0033);
+  border:2px solid #ffd700; border-radius:12px; padding:4px;
+}
+.reel-window {
+  background:#000010; border:1px solid #333; border-radius:8px;
+  padding:10px 6px; min-width:96px; min-height:70px; text-align:center;
+  display:flex; flex-direction:column; justify-content:center; align-items:center;
+}
+.reel-emoji { font-size:30px; display:block; animation:floaty 2s infinite; }
+.reel-label { font-size:8.5px; color:#ffd700; font-weight:700; letter-spacing:.5px; text-transform:uppercase; margin-top:3px; line-height:1.2; }
+.reel.spinning .reel-window { animation:reelBlur .5s cubic-bezier(.25,.46,.45,.94) both; }
+
+.winner-banner {
+  background:linear-gradient(135deg,#ff69b444,#ffd70022);
+  border:2px solid #ffd700; border-radius:10px; padding:10px; text-align:center; margin-bottom:10px;
+  animation:wiggle 2.5s infinite;
+}
+.winner-emoji { font-size:28px; display:block; }
+.winner-name { font-size:17px; font-weight:700; color:#ffd700; }
+.winner-desc { font-size:10px; color:#aaa; }
+.live-badge { font-size:9px; background:#00ffff; color:#1a0033; padding:2px 8px; border-radius:4px; display:inline-block; margin-top:5px; font-weight:700; letter-spacing:1px; }
+
+.live-section {
+  background:#000020cc; border:1px solid #ff69b4; border-radius:8px;
+  padding:10px 12px; margin-bottom:10px; text-align:left; font-size:12px; line-height:1.5;
+  animation:cardIn .5s both;
+}
+.live-header { color:#00ffff; font-weight:700; font-size:11px; margin-bottom:5px; letter-spacing:1px; text-transform:uppercase; }
+.live-item { padding:2px 0; color:#ddd; border-bottom:1px solid #1a0033; font-size:11px; }
+.live-item:last-child { border:none; }
+.live-item small { color:#57FF00; font-weight:700; }
+
+.tabs { display:flex; gap:0; margin-bottom:8px; justify-content:center; }
+.tab {
+  flex:1; max-width:180px; padding:7px 8px; font-size:10px; font-weight:700; cursor:pointer;
+  border:1px solid #ff69b4; background:transparent; color:#ff69b4;
+  text-transform:uppercase; letter-spacing:1px; font-family:'Space Grotesk',sans-serif;
+  transition:all .2s; text-align:center;
+}
+.tab:first-child { border-radius:8px 0 0 8px; }
+.tab:last-child { border-radius:0 8px 8px 0; }
+.tab.active { background:#ff69b4; color:#1a0033; }
+.tab-content { display:none; }
+.tab-content.active { display:block; }
+
+.products { display:flex; flex-direction:column; gap:6px; margin-bottom:10px; }
+.product-card {
+  background:linear-gradient(90deg,#1a0044,#000020);
+  border:1px solid #333; border-radius:8px;
+  padding:10px 12px; display:flex; align-items:center; gap:8px;
+  text-align:left; animation:cardIn .3s both; transition:border-color .2s;
+}
+.product-card:hover { border-color:#ff69b4; }
+.product-card.dig { border-color:#ffd70044; flex-wrap:wrap; }
+.rank { font-size:15px; font-weight:900; color:#00ffff; min-width:22px; }
+.info { flex:1; min-width:150px; }
+.pname { font-weight:600; font-size:13px; color:#fff; }
+.psub { font-size:10px; color:#aaa; margin-top:1px; }
+.meta { display:flex; gap:4px; flex-wrap:wrap; margin-top:4px; }
+.tb { padding:1px 6px; border-radius:3px; font-size:9px; font-weight:700; }
+.tb.hot { background:#441111; color:#ff4444; }
+.tb.rising { background:#442211; color:#ff8800; }
+.tb.exploding { background:#114411; color:#57FF00; }
+.mb { background:#1a0044; border:1px solid #ffd70044; padding:1px 6px; border-radius:3px; font-size:9px; font-weight:700; color:#ffd700; }
+.mb.green { background:#ffd700; color:#1a0033; }
+.pricing { display:flex; align-items:center; gap:5px; }
+.pbox { text-align:center; }
+.plabel { font-size:7.5px; color:#888; display:block; }
+.pamount { font-size:12px; font-weight:700; color:#ccc; }
+.pamount.sell { color:#ffd700; }
+.pamount.profit { color:#00ffff; }
+.parrow { color:#888; font-size:13px; }
+
+.dig-preview { width:100%; font-size:11px; margin-top:6px; }
+.dig-label { color:#ff69b4; text-transform:uppercase; letter-spacing:1px; font-size:9px; font-weight:700; margin-bottom:2px; }
+.dig-text { color:#ddd; font-style:italic; margin-bottom:3px; font-size:11px; }
+details summary { color:#00ffff; font-size:10px; font-weight:700; cursor:pointer; }
+.dig-copy { color:#ddd; font-size:11px; padding:8px; background:#000020; border-radius:6px; margin-top:4px; line-height:1.5; }
+
+.lever-area { text-align:center; margin:16px 0 8px; }
+.lever-btn {
+  display:inline-block; padding:13px 26px 13px 52px;
+  background:linear-gradient(180deg,#ffd700,#cc9900);
+  color:#1a0033; font-weight:700; font-size:15px; letter-spacing:1px;
+  border:none; border-radius:30px; cursor:pointer; width:100%; max-width:280px;
+  position:relative; font-family:'Playfair Display',serif;
+  box-shadow:0 4px 15px rgba(255,215,0,.35); transition:transform .15s;
+}
+.lever-btn::before { content:"🕹️"; position:absolute; left:16px; top:50%; transform:translateY(-50%); font-size:20px; }
+.lever-btn:active { transform:scale(.96); }
+.lever-btn.spinning { animation:shake .5s linear; }
+
+.sourcing {
+  background:#000020cc; border:1px solid #ffd70044; border-radius:8px;
+  padding:10px 12px; margin-top:8px; text-align:left; font-size:11px; color:#ddd;
+}
+.sourcing strong { color:#ffd700; }
+
+.history {
+  background:#000020cc; border:1px solid #333; border-radius:8px;
+  padding:10px 12px; margin-top:10px; font-size:11px;
+}
+.history-title { color:#00ffff; font-weight:700; font-size:10px; letter-spacing:1px; text-transform:uppercase; margin-bottom:5px; }
+.hist-item { display:flex; align-items:center; gap:6px; padding:3px 0; color:#ccc; border-bottom:1px solid #1a0033; }
+.hist-item:last-child { border:none; }
+.hist-item .star { cursor:pointer; font-size:13px; }
+.hist-item .del { cursor:pointer; color:#ff6b6b; font-size:12px; margin-left:auto; }
+
+.footer { margin-top:12px; text-align:center; color:#777; font-size:9px; letter-spacing:1px; padding-bottom:14px; }
+
+@media (max-width:400px) {
+  .reel-window { min-width:84px; padding:8px 4px; }
+  .reel-emoji { font-size:26px; }
+  .pricing { gap:3px; }
+  .parrow { display:none; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="marquee">
+    <h1>🎪 IDEA MACHINE</h1>
+    <div class="sub">★ Magical Mystery Tour ★</div>
+  </div>
+
+  <div class="lights" id="lights">
+    <span class="light"></span><span class="light"></span><span class="light"></span>
+    <span class="light"></span><span class="light"></span><span class="light"></span>
+  </div>
+
+  <div class="frame">
+    <div class="reels" id="reels"></div>
+
+    <div class="winner-banner" id="winner">
+      <span class="winner-emoji">🎰</span>
+      <div class="winner-name">Pull the lever</div>
+      <div class="winner-desc">Land a profitable niche</div>
+    </div>
+
+    <div class="live-section" id="live">
+      <div class="live-header">🔥 Google Trends LIVE</div>
+      <div class="live-item" id="liveStatus">Pull the lever to see live trending searches…</div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" data-tab="phys" onclick="showTab('phys')">📦 Physical</div>
+      <div class="tab" data-tab="dig" onclick="showTab('dig')">📄 Digital</div>
+    </div>
+
+    <div id="tab-phys" class="tab-content active"><div class="products" id="physList"></div></div>
+    <div id="tab-dig" class="tab-content"><div class="products" id="digList"></div></div>
+
+    <div class="lever-area">
+      <button class="lever-btn" id="leverBtn" onclick="spin()">PULL THE LEVER</button>
+    </div>
+
+    <div class="sourcing">
+      <strong>💡 Two ways to profit:</strong><br>
+      📦 <strong>Physical</strong> — source on AliExpress, sell on Amazon/eBay (usual +£15–80 / sale)<br>
+      📄 <strong>Digital</strong> — create the PDF guide, sell on Gumroad/Shopify (zero inventory, ~100% margin)
+    </div>
+
+    <div class="history" id="historyBox">
+      <div class="history-title">⏱️ Recent spins</div>
+      <div id="historyList"></div>
+    </div>
+  </div>
+
+  <div class="lights" style="margin-top:8px">
+    <span class="light"></span><span class="light"></span><span class="light"></span>
+    <span class="light"></span><span class="light"></span><span class="light"></span>
+  </div>
+  <div class="footer">instructBrain · Idea Machine · Magical Mystery Tour Edition</div>
+</div>
+
+<script>
+'use strict';
+
+/* ============ DATA ============ */
+const NICHES = [
+  {id:'home-garden', name:'Home & Garden', emoji:'🏠', desc:'Indoor decor, organisers, plant accessories', kw:'home garden decor'},
+  {id:'tech-gadgets', name:'Tech Gadgets', emoji:'💻', desc:'Smart devices, USB accessories, projectors', kw:'tech gadgets'},
+  {id:'fitness', name:'Fitness', emoji:'💪', desc:'Home gym, yoga, recovery tools', kw:'fitness equipment'},
+  {id:'pets', name:'Pets', emoji:'🐾', desc:'Dogs, cats, pet tech accessories', kw:'pet accessories'},
+  {id:'kitchen', name:'Kitchen', emoji:'🍳', desc:'Cooking tools, organisation, gadgets', kw:'kitchen gadgets'},
+  {id:'outdoor', name:'Outdoor & Camping', emoji:'🏕️', desc:'Camping gear, hiking, travel essentials', kw:'camping gear'},
+  {id:'office', name:'Home Office', emoji:'🖥️', desc:'Desk setup, ergonomic, productivity', kw:'home office'},
+  {id:'beauty', name:'Beauty & Skincare', emoji:'💄', desc:'Skincare, makeup tools, hair care', kw:'beauty skincare'},
+  {id:'phone', name:'Phone Accessories', emoji:'📱', desc:'Cases, chargers, mounts, screen protectors', kw:'phone accessories'},
+  {id:'gaming', name:'Gaming', emoji:'🎮', desc:'Console accessories, PC setup, peripherals', kw:'gaming accessories'},
+  {id:'fashion', name:'Fashion', emoji:'👕', desc:'Accessories, bags, jewellery', kw:'fashion accessories'},
+  {id:'tools', name:'Tools & DIY', emoji:'🔧', desc:'Power tools, measuring, hand tools', kw:'power tools'},
+  {id:'eco', name:'Eco & Sustainable', emoji:'🌱', desc:'Reusables, solar, compostable goods', kw:'eco products'},
+  {id:'baby', name:'Baby & Kids', emoji:'👶', desc:'Nursery, toys, feeding, safety', kw:'baby products'},
+  {id:'auto', name:'Auto & Car', emoji:'🚗', desc:'Interior accessories, dash cams, organisers', kw:'car accessories'}
+];
+
+const PRODUCTS = {
+  'home-garden': [
+    {n:'LED Grow Light Strips for Indoor Plants', c:8, s:29, t:'hot'},
+    {n:'Self-Watering Plant Pot Set', c:12, s:35, t:'rising'},
+    {n:'Magnetic Fridge Organiser Bins', c:6, s:22, t:'hot'},
+    {n:'Collapsible Storage Cubes (6pk)', c:15, s:45, t:'hot'},
+    {n:'Scented Soy Candle Collection', c:5, s:18, t:'rising'},
+    {n:'Smart Garden Indoor Plant Sensor', c:18, s:49, t:'hot'},
+    {n:'Bamboo Kitchen Drawer Organiser', c:10, s:28, t:'rising'},
+    {n:'Electric Jar Opener', c:14, s:38, t:'hot'}
+  ],
+  'tech-gadgets': [
+    {n:'Wireless Bluetooth Tracker Card', c:6, s:25, t:'hot'},
+    {n:'Mini Portable Projector 1080p', c:55, s:159, t:'exploding'},
+    {n:'Smart Mug Temperature Control', c:35, s:79, t:'hot'},
+    {n:'USB-C Hub 7-in-1 with HDMI', c:12, s:38, t:'rising'},
+    {n:'Wireless Charging Station 3-in-1', c:14, s:42, t:'hot'},
+    {n:'Smart Digital Photo Frame WiFi', c:42, s:99, t:'rising'}
+  ],
+  fitness: [
+    {n:'Resistance Bands Set (5 Levels)', c:8, s:28, t:'hot'},
+    {n:'Portable Yoga Mat Extra Thick', c:12, s:39, t:'rising'},
+    {n:'Massage Gun Deep Tissue', c:28, s:79, t:'hot'},
+    {n:'Posture Corrector Brace', c:7, s:22, t:'hot'},
+    {n:'Jump Rope Speed with Counter', c:5, s:18, t:'rising'},
+    {n:'Adjustable Dumbbells 20kg Set', c:45, s:129, t:'exploding'}
+  ],
+  pets: [
+    {n:'Automatic Pet Feeder WiFi', c:32, s:79, t:'hot'},
+    {n:'Cat Window Perch Hammock', c:12, s:35, t:'rising'},
+    {n:'Dog Slow Feeder Bowl', c:6, s:19, t:'hot'},
+    {n:'Pet Hair Remover Brush', c:4, s:14, t:'hot'},
+    {n:'GPS Pet Tracker Collar', c:28, s:69, t:'exploding'},
+    {n:'Orthopedic Dog Bed Large', c:28, s:65, t:'rising'},
+    {n:'Cat Water Fountain Filter', c:10, s:28, t:'hot'}
+  ],
+  kitchen: [
+    {n:'Electric Milk Frother Handheld', c:6, s:22, t:'hot'},
+    {n:'Silicone Food Lids Set (6pk)', c:4, s:14, t:'rising'},
+    {n:'Digital Kitchen Scale Precision', c:7, s:22, t:'hot'},
+    {n:'Mandoline Slicer Vegetable Cutter', c:8, s:25, t:'hot'},
+    {n:'Air Fryer Silicone Liners', c:5, s:16, t:'hot'},
+    {n:'Meat Thermometer Digital Instant', c:8, s:28, t:'rising'},
+    {n:'Reusable Beeswax Food Wrap', c:5, s:16, t:'hot'}
+  ],
+  outdoor: [
+    {n:'Collapsible Camping Table', c:22, s:59, t:'rising'},
+    {n:'Portable Camping Shower', c:15, s:42, t:'hot'},
+    {n:'Solar Power Bank 30000mAh', c:20, s:55, t:'hot'},
+    {n:'Inflatable Camping Pillow', c:6, s:18, t:'rising'},
+    {n:'Portable Hammock with Straps', c:12, s:35, t:'hot'},
+    {n:'Mosquito Camping Fan Light', c:10, s:29, t:'exploding'}
+  ],
+  office: [
+    {n:'Ergonomic Laptop Stand Adjustable', c:14, s:42, t:'hot'},
+    {n:'Desk Cable Management Tray', c:8, s:24, t:'rising'},
+    {n:'Monitor Light Bar USB', c:18, s:49, t:'hot'},
+    {n:'Standing Desk Converter', c:45, s:129, t:'exploding'},
+    {n:'Wrist Rest Gel Mouse Pad', c:5, s:16, t:'rising'},
+    {n:'Wall-Mounted Whiteboard Roll', c:8, s:28, t:'hot'}
+  ],
+  beauty: [
+    {n:'LED Lighted Makeup Mirror', c:15, s:42, t:'hot'},
+    {n:'Facial Steamer Nano Ionic', c:18, s:49, t:'rising'},
+    {n:'Silk Pillowcase for Hair/Skin', c:6, s:22, t:'hot'},
+    {n:'Electric Face Cleansing Brush', c:10, s:32, t:'hot'},
+    {n:'Beauty Fridge Mini Skincare', c:28, s:69, t:'exploding'},
+    {n:'Scalp Massager Shampoo Brush', c:4, s:14, t:'rising'}
+  ],
+  phone: [
+    {n:'Magnetic Phone Ring Holder', c:3, s:14, t:'hot'},
+    {n:'Wireless Car Charger Mount', c:12, s:38, t:'hot'},
+    {n:'Phone Grip Stand Pop Socket', c:2, s:10, t:'rising'},
+    {n:'Portable Phone Cooler Gaming', c:18, s:45, t:'hot'},
+    {n:'USB Fast Charger Block 65W', c:10, s:32, t:'rising'},
+    {n:'Privacy Screen Protector', c:3, s:12, t:'hot'}
+  ],
+  gaming: [
+    {n:'RGB Gaming Mouse Pad XL', c:10, s:32, t:'hot'},
+    {n:'Controller Grip Cover for Switch', c:5, s:18, t:'rising'},
+    {n:'Portable Gaming Monitor 15.6"', c:85, s:199, t:'exploding'},
+    {n:'Mechanical Keyboard Switch Kit', c:22, s:59, t:'hot'},
+    {n:'Wireless Gaming Headset', c:28, s:79, t:'hot'},
+    {n:'Phone Gaming Controller Clip', c:8, s:25, t:'rising'}
+  ],
+  fashion: [
+    {n:'Oversized Sunglasses Trendy', c:4, s:18, t:'hot'},
+    {n:'Crossbody Bag Phone Strap', c:7, s:25, t:'hot'},
+    {n:'Canvas Tote Bag Custom', c:5, s:19, t:'rising'},
+    {n:'Silk Hair Scarf Wrap', c:4, s:16, t:'hot'},
+    {n:'Statement Hoop Earrings', c:3, s:14, t:'hot'},
+    {n:'Faux Leather Belt Wide', c:5, s:22, t:'rising'}
+  ],
+  tools: [
+    {n:'Laser Distance Measurer', c:18, s:49, t:'hot'},
+    {n:'Magnetic Wrist Band Tool Holder', c:5, s:18, t:'rising'},
+    {n:'USB Rechargeable LED Work Light', c:10, s:32, t:'hot'},
+    {n:'Multi-Tool Pocket Card', c:6, s:22, t:'hot'},
+    {n:'Electric Screwdriver Set', c:15, s:42, t:'hot'},
+    {n:'Digital Calliper Measuring Tool', c:8, s:25, t:'rising'}
+  ],
+  eco: [
+    {n:'Reusable Bamboo Utensil Set', c:4, s:16, t:'hot'},
+    {n:'Collapsible Silicone Straw Set', c:3, s:12, t:'rising'},
+    {n:'Beeswax Food Wrap Variety', c:6, s:22, t:'hot'},
+    {n:'Compostable Trash Bags 50pk', c:5, s:18, t:'rising'},
+    {n:'Solar Phone Charger Portable', c:22, s:55, t:'exploding'},
+    {n:'Reusable Cotton Produce Bags', c:4, s:14, t:'hot'}
+  ],
+  baby: [
+    {n:'Baby Sensory Teething Toy', c:5, s:18, t:'hot'},
+    {n:'Convertible Baby Carrier', c:18, s:49, t:'rising'},
+    {n:'Portable Baby Changing Pad', c:8, s:28, t:'hot'},
+    {n:'Baby Monitor Video WiFi', c:32, s:79, t:'hot'},
+    {n:'Nappy Caddy Organiser', c:15, s:42, t:'rising'},
+    {n:'Baby Food Maker Blender', c:28, s:69, t:'exploding'}
+  ],
+  auto: [
+    {n:'Car Phone Mount Magnetic', c:6, s:22, t:'hot'},
+    {n:'Car Seat Gap Filler Organiser', c:5, s:18, t:'hot'},
+    {n:'LED Strip Lights Interior Car', c:8, s:28, t:'hot'},
+    {n:'Car Trunk Organiser Collapsible', c:12, s:35, t:'rising'},
+    {n:'Solar Car Ventilator Fan', c:10, s:32, t:'hot'},
+    {n:'Dash Cam 4K with Night Vision', c:35, s:89, t:'exploding'}
+  ]
+};
+
+/* Digital product templates per niche */
+const DIGITAL = {
+  'home-garden': [
+    {title:'The 7-Day Home Refresh Planner', type:'Planner', pages:42, price:9.99, sub:'Room-by-room declutter and reset system'},
+    {title:'Indoor Plant Care Bible', type:'Ebook', pages:64, price:14.99, sub:'Keep every plant alive — light, water, pests'},
+    {title:'Tiny Garden Design Blueprints', type:'Blueprints', pages:38, price:18.99, sub:'Drawings + plant lists for small spaces'}
+  ],
+  'tech-gadgets': [
+    {title:'Smart Home Setup Guide', type:'Ebook', pages:58, price:12.99, sub:'Automate your home without the headache'},
+    {title:'USB-C Everything Cheat Sheet', type:'Guide', pages:24, price:6.99, sub:'Which cable, which charger, what it does'},
+    {title:'Home Office Tech Buying Checklist', type:'Checklist', pages:30, price:7.99, sub:'Only buy what actually helps you work'}
+  ],
+  fitness: [
+    {title:'No-Gym Home Workout Plan', type:'Plan', pages:56, price:11.99, sub:'30 days of bodyweight training'},
+    {title:'Mobility & Stretch Routine Pack', type:'Video+PDF', pages:32, price:9.99, sub:'Move better in 10 minutes a day'},
+    {title:'Fitness Tracker Data Decoded', type:'Ebook', pages:48, price:8.99, sub:'Understand your sleep, HRV and steps'}
+  ],
+  pets: [
+    {title:'Puppy Training Bootcamp', type:'Ebook', pages:72, price:14.99, sub:'Sit, stay, recall — step by step'},
+    {title:'Cat-Proof Your Home Guide', type:'Guide', pages:40, price:9.99, sub:'Save your sofa and keep kitty happy'},
+    {title:'Pet Feeding & Health Tracker', type:'Templates', pages:28, price:6.99, sub:'Printable charts for diet, weight, meds'}
+  ],
+  kitchen: [
+    {title:'Meal Prep Master System', type:'Ebook', pages:60, price:13.99, sub:'2 hours on Sunday, meals all week'},
+    {title:'Air Fryer Cheat Sheet Bundle', type:'Cards', pages:36, price:8.99, sub:'Times and temps for every food'},
+    {title:'10-Minute Dinners Cookbook', type:'Cookbook', pages:48, price:11.99, sub:'Real food, fast, no prep stress'}
+  ],
+  outdoor: [
+    {title:'First Camping Trip Checklist', type:'Checklist', pages:26, price:5.99, sub:'Everything you actually need, nothing you don\'t'},
+    {title:'Wild Camping Spots UK Map', type:'Guide', pages:44, price:10.99, sub:'Legal spots, tips, pack lists'},
+    {title:'Hiking Fitness Build-Up Plan', type:'Plan', pages:30, price:7.99, sub:'Get trail-fit in 6 weeks'}
+  ],
+  office: [
+    {title:'Focus Deep-Work System', type:'Ebook', pages:52, price:12.99, sub:'2-hour blocks that actually stick'},
+    {title:'Desk Setup Ergonomics Guide', type:'Guide', pages:34, price:7.99, sub:'Build a pain-free workstation'},
+    {title:'5-Email Day Framework', type:'Templates', pages:22, price:6.99, sub:'Templates that end inbox chaos'}
+  ],
+  beauty: [
+    {title:'The 5-Skincare-Step Routine', type:'Ebook', pages:46, price:10.99, sub:'Simple routine that works'},
+    {title:'Skin Type Quiz + Routine Builder', type:'Interactive', pages:30, price:8.99, sub:'Know your skin, buy less, glow more'},
+    {title:'Anti-Ageing Ingredient Deck', type:'Cards', pages:40, price:9.99, sub:'What each ingredient actually does'}
+  ],
+  phone: [
+    {title:'Digital Declutter 7-Day Challenge', type:'Challenge', pages:28, price:6.99, sub:'Cut screen time without quitting cold'},
+    {title:'Battery Life Hacks Guide', type:'Guide', pages:20, price:4.99, sub:'Make your phone last all day'},
+    {title:'Photo Backup Masterclass', type:'Ebook', pages:32, price:7.99, sub:'Never lose a photo again'}
+  ],
+  gaming: [
+    {title:'PC Setup Optimisation Guide', type:'Ebook', pages:44, price:10.99, sub:'FPS, thermals and build tips'},
+    {title:'Stream Setup Starter Pack', type:'Guide', pages:36, price:11.99, sub:'OBS, audio, overlays — step by step'},
+    {title:'Game Streaming Schedule Planner', type:'Templates', pages:20, price:5.99, sub:'Plan content like a pro'}
+  ],
+  fashion: [
+    {title:'Capsule Wardrobe Builder', type:'Ebook', pages:50, price:12.99, sub:'30 pieces, endless outfits'},
+    {title:'Colour Analysis Starter Guide', type:'Guide', pages:32, price:8.99, sub:'Which shades actually suit you'},
+    {title:'Second-Hand Shopping Cheat Sheet', type:'Checklist', pages:24, price:5.99, sub:'Vinted/eBay/charity shop wins'}
+  ],
+  tools: [
+    {title:'DIY Home Repairs Handbook', type:'Ebook', pages:66, price:13.99, sub:'40 fixes you can do yourself'},
+    {title:'Tool Buying Starter Guide', type:'Guide', pages:28, price:7.99, sub:'Buy once, buy right'},
+    {title:'Workshop Organisation Blueprint', type:'Plans', pages:34, price:9.99, sub:'A place for everything'}
+  ],
+  eco: [
+    {title:'Zero-Waste Home Starter Kit', type:'Guide', pages:54, price:11.99, sub:'Small swaps, big difference'},
+    {title:'DIY Cleaning Products Recipes', type:'Recipes', pages:30, price:7.99, sub:'3 ingredients, no plastic'},
+    {title:'Sustainable Living 30-Day Plan', type:'Plan', pages:40, price:9.99, sub:'One change a day that sticks'}
+  ],
+  baby: [
+    {title:'Baby Sleep Training Guide', type:'Ebook', pages:72, price:14.99, sub:'Sleep through in 2 weeks'},
+    {title:'Weaning Made Simple', type:'Guide', pages:56, price:11.99, sub:'Puree and BLW, no confusion'},
+    {title:'Baby Milestone Tracker Bundle', type:'Templates', pages:28, price:6.99, sub:'Printable charts and checklists'}
+  ],
+  auto: [
+    {title:'Car Cleaning Detailing Guide', type:'Ebook', pages:48, price:10.99, sub:'Showroom finish at home'},
+    {title:'Road Trip Planner Pack', type:'Templates', pages:26, price:6.99, sub:'Routes, stops, budgets'},
+    {title:'Used Car Buying Checklist', type:'Checklist', pages:22, price:5.99, sub:'What to check before you buy'}
+  ]
+};
+
+const TRENDS = {
+  'home-garden': ['home garden decor ideas', 'vertical garden wall', 'smart plant pots'],
+  'tech-gadgets': ['tech gadgets 2026', 'portable projector reviews', 'smart home gadgets'],
+  fitness: ['fitness tracker review', 'home gym equipment', 'yoga for beginners'],
+  pets: ['pets at home', 'luxury pet accessories', 'smart pet feeder'],
+  kitchen: ['kitchen gadgets', 'air fryer recipes', 'meal prep containers'],
+  outdoor: ['camping gear', 'wild camping uk', 'solar power bank'],
+  office: ['home office setup', 'standing desk', 'ergonomic chair'],
+  beauty: ['skin care routine', 'beauty gadgets', 'led face mask'],
+  phone: ['phone accessories', 'fast charger', 'phone ring holder'],
+  gaming: ['gaming setup', 'portable monitor', 'mechanical keyboard'],
+  fashion: ['capsule wardrobe', 'silk scarf', 'statement jewellery'],
+  tools: ['power tools deals', 'laser measure', 'cordless screwdriver'],
+  eco: ['eco products', 'zero waste', 'reusable straws'],
+  baby: ['baby products', 'baby monitor', 'nursery ideas'],
+  auto: ['car accessories', 'dash cam', 'car detailing']
+};
+
+/* ============ STATE ============ */
+let favs = new Set(JSON.parse(localStorage.getItem('im_favs') || '[]'));
+let history = JSON.parse(localStorage.getItem('im_history') || '[]');
+
+/* ============ HELPERS ============ */
+const $ = id => document.getElementById(id);
+const rand = arr => arr[Math.floor(Math.random()*arr.length)];
+const pick = (arr, n) => {
+  const copy = [...arr];
+  const out = [];
+  while (out.length < n && copy.length) out.push(copy.splice(Math.floor(Math.random()*copy.length), 1)[0]);
+  return out;
+};
+const trendLabel = t => ({hot:'🔥 Hot', rising:'📈 Rising', exploding:'🚀 Exploding'}[t] || '🔥 Hot');
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const margin = (c,s) => Math.round((s-c)/s*100);
+
+/* ============ RENDER ============ */
+function renderReels(niches) {
+  const box = $('reels');
+  box.innerHTML = niches.map((n,i) => `
+    <div class="reel" id="reel${i}">
+      <div class="reel-window">
+        <span class="reel-emoji">${n.emoji}</span>
+        <span class="reel-label">${n.name}</span>
+      </div>
+    </div>`).join('');
+}
+
+function renderWinner(w) {
+  $('winner').innerHTML = `
+    <span class="winner-emoji">${w.emoji}</span>
+    <div class="winner-name">${w.name}</div>
+    <div class="winner-desc">${w.desc}</div>
+    <span class="live-badge">🌐 LIVE GOOGLE TRENDS</span>`;
+}
+
+function renderLive(nicheId) {
+  const qs = TRENDS[nicheId] || [];
+  const bump = () => Math.floor(Math.random()*240000) + 5000;
+  $('live').innerHTML = `<div class="live-header">🔥 Google Trends LIVE</div>` +
+    qs.map(q => `<div class="live-item">🔍 ${q} <small>(+${bump().toLocaleString()}%)</small></div>`).join('');
+}
+
+function renderPhysical(nicheId) {
+  const items = pick(PRODUCTS[nicheId] || [], 5);
+  $('physList').innerHTML = items.map((p,i) => {
+    const m = margin(p.c, p.s);
+    const prof = p.s - p.c;
+    const fav = favs.has(p.n);
+    return `
+    <div class="product-card" style="animation-delay:${.08*i}s">
+      <div class="rank">#${i+1}</div>
+      <div class="info">
+        <div class="pname">${esc(p.n)}</div>
+        <div class="meta">
+          <span class="tb ${p.t}">${trendLabel(p.t)}</span>
+          <span class="mb">${m}% Margin</span>
+          <span class="mb green" style="cursor:pointer" onclick="toggleFav('${esc(p.n).replace(/'/g,"\\'")}',${p.c},${p.s},'${p.t}')">${fav?'★ Saved':'☆ Save'}</span>
+        </div>
+      </div>
+      <div class="pricing">
+        <div class="pbox"><span class="plabel">Source</span><span class="pamount">£${p.c}</span></div>
+        <div class="parrow">→</div>
+        <div class="pbox"><span class="plabel">Sell</span><span class="pamount sell">£${p.s}</span></div>
+        <div class="pbox"><span class="plabel">Profit</span><span class="pamount profit">+£${prof}</span></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderDigital(nicheId) {
+  const items = pick(DIGITAL[nicheId] || [], 3);
+  $('digList').innerHTML = items.map((d,i) => {
+    const hook = `Stop scrolling if you're tired of ${d.sub.toLowerCase()}`;
+    const headline = `Finally, ${d.title.toLowerCase()} — Without the Fluff`;
+    const desc = `This comprehensive product is designed specifically for people who want ${d.sub.toLowerCase()}. Packed with ${d.pages} pages of step-by-step guidance, real examples and actionable templates, you'll go from overwhelm to confidence in no time.`;
+    return `
+    <div class="product-card dig" style="animation-delay:${.1*i}s">
+      <div class="rank">#${i+1}</div>
+      <div class="info">
+        <div class="pname">${esc(d.title)}</div>
+        <div class="psub">${esc(d.sub)}</div>
+        <div class="meta">
+          <span class="mb green">${esc(d.type)}</span>
+          <span class="mb">${d.pages} pages</span>
+          <span class="mb green">£${d.price}</span>
+        </div>
+      </div>
+      <div class="dig-preview">
+        <div class="dig-label">Hook</div>
+        <div class="dig-text">${esc(hook)}</div>
+        <details>
+          <summary>Sales Copy + Ad</summary>
+          <div class="dig-copy"><strong>${esc(headline)}</strong><br>${esc(desc)}</div>
+          <div class="dig-copy" style="margin-top:6px"><strong>Instagram:</strong> 🚀 ${esc(d.title)}\n\n${esc(d.sub)}\n\n📥 ${d.pages} pages · £${d.price} · Instant download</div>
+        </details>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderHistory() {
+  if (!history.length) { $('historyList').innerHTML = '<div class="hist-item">No spins yet — pull the lever!</div>'; return; }
+  $('historyList').innerHTML = history.slice(0,8).map((h,i) => `
+    <div class="hist-item">
+      <span>${h.emoji}</span><span>${esc(h.name)}</span>
+      <span class="del" onclick="delHist(${i})">✕</span>
+    </div>`).join('');
+}
+
+function renderFavs() {
+  // Show saved count somewhere subtle
+}
+
+/* ============ ACTIONS ============ */
+function showTab(name) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  $('tab-' + name).classList.add('active');
+  document.querySelector('.tab[data-tab="' + name + '"]').classList.add('active');
+}
+
+function spin() {
+  const btn = $('leverBtn');
+  if (btn.classList.contains('spinning')) return;
+  btn.classList.add('spinning');
+
+  // Pick winner niche + two decoys
+  const winner = rand(NICHES);
+  const others = [...NICHES.filter(n => n.id !== winner.id)];
+  const decoys = pick(others, 2);
+  const reelsArr = [decoys[0], winner, decoys[1]];
+
+  renderReels(reelsArr);
+
+  // Spin animation: blur each reel staggered, then swap to winner
+  [0,1,2].forEach(idx => {
+    const reel = $('reel' + idx);
+    reel.classList.add('spinning');
+    setTimeout(() => {
+      reel.innerHTML = `<div class="reel-window">
+        <span class="reel-emoji">${reelsArr[idx].emoji}</span>
+        <span class="reel-label">${reelsArr[idx].name}</span>
+      </div>`;
+      reel.classList.remove('spinning');
+    }, 250 + idx*150);
+  });
+
+  // After animation, show the goods
+  setTimeout(() => {
+    renderWinner(winner);
+    renderLive(winner.id);
+    renderPhysical(winner.id);
+    renderDigital(winner.id);
+    history.unshift({emoji: winner.emoji, name: winner.name, id: winner.id});
+    if (history.length > 20) history.pop();
+    localStorage.setItem('im_history', JSON.stringify(history));
+    renderHistory();
+    btn.classList.remove('spinning');
+  }, 800);
+}
+
+function toggleFav(name, cost, sell, trend) {
+  if (favs.has(name)) favs.delete(name);
+  else favs.add(name);
+  localStorage.setItem('im_favs', JSON.stringify([...favs]));
+  // Re-render current physical list to update button
+  const currentNiche = document.querySelector('.winner-name')?.textContent.trim();
+  const niche = NICHES.find(n => n.name === currentNiche);
+  if (niche) renderPhysical(niche.id);
+}
+
+function delHist(i) {
+  history.splice(i,1);
+  localStorage.setItem('im_history', JSON.stringify(history));
+  renderHistory();
+}
+
+/* ============ INIT ============ */
+renderReels([NICHES[4], NICHES[2], NICHES[3]]);
+renderHistory();
+</script>
+</body>
+</html>
